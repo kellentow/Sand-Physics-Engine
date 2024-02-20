@@ -1,4 +1,9 @@
 req.add("screen.js", 1.3);
+
+const targetFPS = 30;
+const targetFrameDuration = 1000 / targetFPS;
+let lastFrameTime = performance.now();
+
 var fps = {now:0, round:0, array:[]}
 var last = new Date();
 var sand = []
@@ -35,15 +40,17 @@ var selected = Object.keys(powders)
 var sel = 0
 
 function updateloop() {
+    const currentTime = performance.now();
+    const elapsed = currentTime - lastFrameTime;
+    
     occupied = []
     isParticleAt()
-
     mousehandler();
     keyhandler();
-
     update();
     draw();
 
+    // fps calc
     var thisLoop = new Date();
     fps.now = Math.round((1000 / (thisLoop - last))*10)/10
     fps.array.unshift(fps.now);
@@ -56,7 +63,10 @@ function updateloop() {
     }
     last = thisLoop;
 
-    requestAnimationFrame(updateloop)
+    // update for 60fps
+    lastFrameTime = currentTime;
+    const timeToNextFrame = Math.max(0, targetFrameDuration - elapsed);
+    setTimeout(() => {requestAnimationFrame(updateloop);}, timeToNextFrame);
 }
 
 function isParticleAt(x, y) {
@@ -184,8 +194,14 @@ var keys = {};
 document.addEventListener('keydown', function (e) {keys[e.code] = 1});
 document.addEventListener('keyup', function (e) {keys[e.code] = 3});
 document.addEventListener('mousemove', function (e) {
-    mouse={x:e.layerX-10,y:e.layerY-80,h:e.target,b:e.buttons}
+    mouse.x = e.layerX-10
+    mouse.y = e.layerY-80
+    mouse.h = e.target
 });
+
+//mouse stuff
+document.addEventListener('mousedown', function (e) {mouse.b = e.buttons});
+document.addEventListener('mouseup', function (e) {mouse.b = e.buttons});
 document.addEventListener('wheel', function (e) {
     if (e.deltaY < 0) {
         brushS += 1
@@ -196,8 +212,8 @@ document.addEventListener('wheel', function (e) {
         brushS = 1
     }
 });
+
 function keyhandler() {
-    console.log(keys)
     if (keys.Space == 1) {
         keys.Space = 2
         sel += 1
@@ -223,7 +239,7 @@ function mousehandler() {
                 deleteParticle(a[i].x, a[i].y)
             }
         }
-        if (mouse.b != 0) {
+        if (!mouse.b == 0) {
             occupied = []
             isParticleAt()
         }
