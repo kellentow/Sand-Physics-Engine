@@ -4,6 +4,7 @@ const targetFPS = 30;
 const targetFrameDuration = 1000 / targetFPS;
 let lastFrameTime = performance.now();
 
+var sands = []
 var fps = {now:0, round:0, array:[]}
 var last = new Date();
 var sand = []
@@ -35,6 +36,24 @@ var powders = {
         temp: 30,
         kind: "solid"
     },
+    Ice: {
+        convection: 0.0005,
+        color: "#2e93db",
+        temp: 0,
+        kind: "solid"
+    },
+    Water: {
+        convection: 0.0007,
+        color: "#0034cf",
+        temp: 30,
+        kind: "liquid"
+    },
+    WaterVapor: {
+        convection: 0.0003,
+        color: "#4b4bf2",
+        temp: 100,
+        kind: "gas"
+    }
 }
 var selected = Object.keys(powders)
 var sel = 0
@@ -88,10 +107,19 @@ function isParticleAt(x, y) {
 }
 
 function getParticleAt(x, y) {
-    for (let i = 0; i < sand.length; i++) {
-        let particle = sand[i];
-        if (particle.x == x && particle.y == y) {
-            return {particle: particle, index: i};
+    if (!sands || !sands[x] || !sands[x][y]) {
+        sands = []
+        for (let i = 0; i < sand.length; i++) {
+            let particle = sand[i];
+            if (!sands[particle.x]) {
+                sands[particle.x] = [];
+            }
+            sands[particle.x][particle.y] = {particle: particle, index: i};
+        }
+    }
+    if (sands[x]) {
+        if (sands[x][y]) {
+            return sands[x][y];
         }
     }
     return {particle: "null", index: -1};
@@ -110,7 +138,8 @@ function update() {
             } else if (!isParticleAt(sand[i].x + 1, sand[i].y + 1)) {
                 sand[i].x += 1;
                 sand[i].y += 1;
-            } if (sand[i].temp >= 1700) {sand[i].type = "MoltenGlass"}
+            } 
+            if (sand[i].temp >= 1700) {sand[i].type = "MoltenGlass"}
 
         } else if (sand[i].type == "MoltenGlass") {
             if (!isParticleAt(sand[i].x, sand[i].y + 1)) {
@@ -127,13 +156,56 @@ function update() {
                 sand[i].x += 1;
             }  
             if (sand[i].temp < 1700) {sand[i].type = "Glass"}
-            var part = getParticleAt(sand[i].x, sand[i].y-1)
-            if (part.particle.kind == "powder") {
-                sand[part.index].y = sand[i].y;
+            var part1 = getParticleAt(sand[i].x, sand[i].y-1)
+            if (part1.particle.kind == "powder") {
+                sand[part1.index].y = sand[i].y;
                 sand[i].y -= 1;
             }
         } else if (sand[i].type == "Glass") {
 
+        } else if (sand[i].type == "Water") {
+            if (!isParticleAt(sand[i].x, sand[i].y + 1)) {
+                sand[i].y += 1;
+            } else if (!isParticleAt(sand[i].x - 1, sand[i].y + 1) && Math.random() <= 0.5) {
+                sand[i].x -= 1;
+                sand[i].y += 1;
+            } else if (!isParticleAt(sand[i].x + 1, sand[i].y + 1) && Math.random() <= 0.5) {
+                sand[i].x += 1;
+                sand[i].y += 1;
+            } else if (!isParticleAt(sand[i].x - 1, sand[i].y) && Math.random() <= 0.5) {
+                sand[i].x -= 1;
+            } else if (!isParticleAt(sand[i].x + 1, sand[i].y)) {
+                sand[i].x += 1;
+            }  
+            if (sand[i].temp >= 100) {sand[i].type = "WaterVapor"}
+            if (sand[i].temp <= 0) {sand[i].type = "Ice"}
+            var part1 = getParticleAt(sand[i].x, sand[i].y-1)
+            if (part1.particle.kind == "powder") {
+                sand[part1.index].y = sand[i].y;
+                sand[i].y -= 1;
+            }
+        } else if (sand[i].type == "WaterVapor") {
+            if (!isParticleAt(sand[i].x, sand[i].y - 1)) {
+                sand[i].y -= 1;
+            } else if (!isParticleAt(sand[i].x - 1, sand[i].y - 1) && Math.random() <= 0.5) {
+                sand[i].x -= 1;
+                sand[i].y -= 1;
+            } else if (!isParticleAt(sand[i].x + 1, sand[i].y - 1) && Math.random() <= 0.5) {
+                sand[i].x += 1;
+                sand[i].y -= 1;
+            } else if (!isParticleAt(sand[i].x - 1, sand[i].y) && Math.random() <= 0.5) {
+                sand[i].x -= 1;
+            } else if (!isParticleAt(sand[i].x + 1, sand[i].y)) {
+                sand[i].x += 1;
+            }  
+            if (sand[i].temp < 100) {sand[i].type = "Water"}
+            var part1 = getParticleAt(sand[i].x, sand[i].y-1)
+            if (part1.particle.kind == "powder" || part1.particle.kind == "liquid") {
+                sand[part1.index].y = sand[i].y;
+                sand[i].y -= 1;
+            }
+        } else if (sand[i].type == "Ice") {
+            if (sand[i].temp > 0) {sand[i].type = "Water"}
         }
         if (sand[i].x < 1 ||sand[i].x >= scr.dm1 ||sand[i].y < 1 ||sand[i].y >= scr.dm1) {
             // Reset particle position if out of bounds
@@ -260,11 +332,10 @@ function mousehandler() {
     }
 }
 
-function deleteParticle(x, y) {
-    for (let i = 0; i < sand.length; i++) {
-        if (sand[i].x == x && sand[i].y == y) {
-            sand.splice(i, 1);
-        }
+function deleteParticle(x1, y1) {
+    var a = getParticleAt(x1, y1).index
+    if (a!= -1) {
+        sand.splice(a, 1);
     }
 }
 
