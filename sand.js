@@ -87,7 +87,15 @@ function isParticleAt(x, y) {
     }
 }
 
-
+function getParticleAt(x, y) {
+    for (let i = 0; i < sand.length; i++) {
+        let particle = sand[i];
+        if (particle.x == x && particle.y == y) {
+            return {particle: particle, index: i};
+        }
+    }
+    return {particle: "null", index: -1};
+}
 
 function update() {
     for (var i = 0; i < sand.length; i++) {
@@ -117,7 +125,13 @@ function update() {
                 sand[i].x -= 1;
             } else if (!isParticleAt(sand[i].x + 1, sand[i].y)) {
                 sand[i].x += 1;
-            }  if (sand[i].temp < 1700) {sand[i].type = "Glass"}
+            }  
+            if (sand[i].temp < 1700) {sand[i].type = "Glass"}
+            var part = getParticleAt(sand[i].x, sand[i].y-1)
+            if (part.particle.kind == "powder") {
+                sand[part.index].y = sand[i].y;
+                sand[i].y -= 1;
+            }
         } else if (sand[i].type == "Glass") {
 
         }
@@ -161,14 +175,14 @@ function draw() {
 function init() {
     screen.create.screen(scr.d, scr.d, "sand");
     screen.create.screen(3/8*scr.d, scr.d, "sidebar");
-    for (let i = 0; i < 180; i++) {
-        for (let j = 0; j < 180; j++) {
-            if (j>=90 && i>10 && i<170) {
-                sand.push(new Particle(190-i, 190-j, "Sand"))
-            } else if (j<90 && j>10 && i>10 && i<170) {
-                sand.push(new Particle(190-i, 190-j, "MoltenGlass"))
+    for (let i = 0; i < 80; i++) {
+        for (let j = 0; j < 80; j++) {
+            if (j>=40 && i>5 && i<75) {
+                sand.push(new Particle(90-i, 90-j, "Sand"))
+            } else if (j<40 && j>5 && i>5 && i<75) {
+                sand.push(new Particle(90-i, 90-j, "MoltenGlass"))
             } else {
-                sand.push(new Particle(190-i, 190-j, "Glass"))
+                sand.push(new Particle(90-i, 90-j, "Glass"))
             }
         }
     }
