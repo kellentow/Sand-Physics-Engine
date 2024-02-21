@@ -56,6 +56,8 @@ var powders = {
     }
 }
 var selected = Object.keys(powders)
+selected.push("Heat")
+selected.push("Cool")
 var sel = 0
 
 function updateloop() {
@@ -106,6 +108,12 @@ function isParticleAt(x, y) {
     }
 }
 
+function particleTransform(index, type) {
+    sand[index].type = type;
+    sand[index].color = powders[type].color;
+    sand[index].kind = powders[type].kind;
+}
+
 function getParticleAt(x, y) {
     if (!sands || !sands[x] || !sands[x][y]) {
         sands = []
@@ -142,8 +150,8 @@ function update() {
                 sand[i].y += 1;
             }
             if (sand[i].temp >= 1700) {
-                sand[i].type = "MoltenGlass"
-                return
+                particleTransform(i, "MoltenGlass")
+
             }
 
         } else if (sand[i].type == "MoltenGlass") {
@@ -160,9 +168,9 @@ function update() {
             } else if (!isParticleAt(sand[i].x + 1, sand[i].y)) {
                 sand[i].x += 1;
             }
-            if (sand[i].temp < 1700) {
-                sand[i].type = "Glass"
-                return
+            if (sand[i].temp < 1500) {
+                particleTransform(i, "Glass")
+
             }
             var part1 = getParticleAt(sand[i].x, sand[i].y - 1)
             if (part1.particle.kind == "powder") {
@@ -170,9 +178,9 @@ function update() {
                 sand[i].y -= 1;
             }
         } else if (sand[i].type == "Glass") {
-            if (sand[i].temp >= 1700) {
-                sand[i].type = "MoltenGlass"
-                return
+            if (sand[i].temp >= 1500) {
+                particleTransform(i, "MoltenGlass")
+
             }
         } else if (sand[i].type == "Water") {
             if (!isParticleAt(sand[i].x, sand[i].y + 1)) {
@@ -189,10 +197,13 @@ function update() {
                 sand[i].x += 1;
             }
             if (sand[i].temp >= 100) {
-                sand[i].type = "WaterVapor"
-                return
+                particleTransform(i, "WaterVapor")
+
             }
-            if (sand[i].temp <= 0) { sand[i].type = "Ice" }
+            if (sand[i].temp <= 0) {
+                particleTransform(i, "Ice")
+
+            }
             var part1 = getParticleAt(sand[i].x, sand[i].y - 1)
             if (part1.particle.kind == "powder") {
                 sand[part1.index].y = sand[i].y;
@@ -213,8 +224,8 @@ function update() {
                 sand[i].x += 1;
             }
             if (sand[i].temp < 100) {
-                sand[i].type = "Water"
-                return
+                particleTransform(i, "Water")
+
             }
             var part1 = getParticleAt(sand[i].x, sand[i].y - 1)
             if (part1.particle.kind == "powder" || part1.particle.kind == "liquid") {
@@ -223,8 +234,7 @@ function update() {
             }
         } else if (sand[i].type == "Ice") {
             if (sand[i].temp > 0) {
-                sand[i].type = "Water"
-                return
+                particleTransform(i, "Water")
             }
         }
         if (sand[i].x < 1 || sand[i].x >= scr.dm1 || sand[i].y < 1 || sand[i].y >= scr.dm1) {
@@ -233,10 +243,10 @@ function update() {
             sand[i].y = py;
         }
 
-        p1 = getParticleAt(sand[i].x, sand[i].y - 1)
-        p2 = getParticleAt(sand[i].x + 1, sand[i].y)
-        p3 = getParticleAt(sand[i].x, sand[i].y + 1)
-        p4 = getParticleAt(sand[i].x - 1, sand[i].y)
+        var p1 = getParticleAt(sand[i].x, sand[i].y - 1)
+        var p2 = getParticleAt(sand[i].x + 1, sand[i].y)
+        var p3 = getParticleAt(sand[i].x, sand[i].y + 1)
+        var p4 = getParticleAt(sand[i].x - 1, sand[i].y)
 
         if (p1.index != -1) {
             if (p1.particle.temp > sand[i].temp) {
@@ -409,8 +419,21 @@ function mousehandler() {
         if (mouse.b == 1) {
             var a = getPointsInRadius(brushS)
             for (let i = 0; i < a.length; i++) {
-                if (!occupied[a[i].x][a[i].y])
-                    sand.push(new Particle(a[i].x, a[i].y, selected[sel]))
+
+                if (selected[sel] != "Heat" && selected[sel] != "Cool") {
+                    if (!occupied[a[i].x][a[i].y]) {
+                        sand.push(new Particle(a[i].x, a[i].y, selected[sel]))
+                    }
+                } else if (selected[sel] == "Heat") {
+                    if (getParticleAt(a[i].x,a[i].y).index != -1) {
+                        sand[getParticleAt(a[i].x,a[i].y).index].temp += 5
+                    }
+                } else if (selected[sel] == "Cool") {
+                    if (getParticleAt(a[i].x,a[i].y).index != -1) {
+                        sand[getParticleAt(a[i].x,a[i].y).index].temp -= 5
+                    }
+                }
+
             }
         }
         if (mouse.b == 2) {
