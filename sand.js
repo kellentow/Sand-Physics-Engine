@@ -53,7 +53,19 @@ var powders = {
         color: "#4b4bf2",
         temp: 100,
         kind: "gas"
-    }
+    },
+    Graphite: {
+        convection: 0.15,
+        color: "#555555",
+        temp: 30,
+        kind: "solid"
+    },
+    MoltenGraphite: {
+        convection: 0.1,
+        color: "#AA7744",
+        temp: 3600,
+        kind: "liquid"
+    },
 }
 var selected = Object.keys(powders)
 selected.push("Heat")
@@ -235,6 +247,28 @@ function update() {
         } else if (sand[i].type == "Ice") {
             if (sand[i].temp > 0) {
                 particleTransform(i, "Water")
+            }
+        } else if (sand[i].type == "Graphite") {
+            if (sand[i].temp >= 3600) {
+                particleTransform(i, "MoltenGraphite")
+            }
+        } else if (sand[i].type == "MoltenGraphite") {
+            if (!isParticleAt(sand[i].x, sand[i].y + 1)) {
+                sand[i].y += 1;
+            } else if (!isParticleAt(sand[i].x - 1, sand[i].y + 1) && Math.random() <= 0.5) {
+                sand[i].x -= 1;
+                sand[i].y += 1;
+            } else if (!isParticleAt(sand[i].x + 1, sand[i].y + 1) && Math.random() <= 0.5) {
+                sand[i].x += 1;
+                sand[i].y += 1;
+            } else if (!isParticleAt(sand[i].x - 1, sand[i].y) && Math.random() <= 0.5) {
+                sand[i].x -= 1;
+            } else if (!isParticleAt(sand[i].x + 1, sand[i].y)) {
+                sand[i].x += 1;
+            }
+            if (sand[i].temp < 3600) {
+                particleTransform(i, "Graphite")
+
             }
         }
         if (sand[i].x < 1 || sand[i].x >= scr.dm1 || sand[i].y < 1 || sand[i].y >= scr.dm1) {
